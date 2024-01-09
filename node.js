@@ -45,6 +45,17 @@ router.get('/api/fullchains', async (ctx) => {
   };
 });
 
+// 发送本节点所保存的临近节点
+router.get('/api/nodes', async (ctx) => {
+  ctx.body = {
+    message: 'Get nodes successfully',
+    data: {
+      nodes: blockchain.nodes
+    }
+  };
+});
+
+
 // Register routes
 app.use(router.routes()).use(router.allowedMethods());
 

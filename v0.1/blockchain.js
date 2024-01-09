@@ -100,9 +100,8 @@ class Blockchain {
     // 打包交易
     this.currentTransactions.push(this.createTransaction(conbase));
     this.transactions.push(this.createTransaction(transaction));
-    // 获取前一个区块的工作量证明
-    const previousBlockHash = this.getLastBlock().blockHash;
-    // 传入上个区块的信息，开始挖矿(计算随机数)
+    // 获取前一个区块的工作哈希，用于计算当前区块的工作量证明
+    const previousBlockHash = this.getLastBlock().previousBlockHash;
     const blockHeader = this.proofOfWork(previousBlockHash);
     // 创建区块
     this.addBlock(blockHeader);

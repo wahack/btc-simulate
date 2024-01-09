@@ -1,16 +1,50 @@
 import crypto from "crypto";
 import got from "got";
-import sha256 from "crypto-js/sha256";
+import sha256 from "crypto-js/sha256.js";
+import { subscribe, broadcast } from '../network.js'
 
 class Blockchain {
-  constructor() {
+  constructor(name) {
+    this.netName = name
     this.chains = [];
     this.currentTransactions = []; // 记录接受的交易信息
     this.nodes = new Set(); // 记录所有的节点
     this.difficult = "0000"; // 工作量证明的难度，实际为256 位的十六进制数，这里简化为'0000'
     // 创建私钥
     this.privateKey = crypto.createECDH("secp256k1");
+    this.initializeListeners();
   }
+
+  logger (message) {
+    if (typeof(message) === 'object') message = JSON.stringify(message, null, 2)
+    console.log(`【${this.netName}】: ${message}`)
+  }
+
+  initializeListeners() {
+    // 监听交易广播;
+    this.logger('开始监听网络中的广播');
+
+    subscribe('new_transaction', (data) => {
+      this.logger('收到一笔交易')
+      this.createTransaction(data);
+      // 向临近节点广播交易
+      broadcast(this.nodes, 'new_transaction', data);
+      // 如果当前交易记录大于等于2笔，就打包两笔交易，计算工作量证明
+      if (this.currentTransactions.length >= 2) {
+        this.mine();
+      }
+    })
+
+    // 监听新的区块
+    subscribe('new_block', (data) => {
+      this.logger('收到一个新的区块生成信息:', data)
+      this.isBlockValid(data);
+      this.isChainValid(data.fullchains);
+    })
+
+  }
+
+  
   /**
    * 创建区块
    * @param {上一个区块的hash} previousBlockHash
@@ -38,7 +72,8 @@ class Blockchain {
       output,
       amount,
     };
-    return transaction;
+    this.currentTransactions.push(transaction);
+    return this.currentTransactions;
   }
 
   /**
@@ -90,7 +125,8 @@ class Blockchain {
   /**
    * 挖矿
    */
-  mine(transaction) {
+  mine() {
+    this.logger('开始打包交易，计算工作量证明')
     // 第一笔coinbase记录与矿工打包区块成功的奖励和手续费
     const conbase = {
       input: "",
@@ -99,7 +135,6 @@ class Blockchain {
     };
     // 打包交易
     this.currentTransactions.push(this.createTransaction(conbase));
-    this.transactions.push(this.createTransaction(transaction));
     // 获取前一个区块的工作哈希，用于计算当前区块的工作量证明
     const previousBlockHash = this.getLastBlock().previousBlockHash;
     const blockHeader = this.proofOfWork(previousBlockHash);
@@ -123,17 +158,25 @@ class Blockchain {
     while (currentIndex < chain.length) {
       const currentBlock = chain[currentIndex];
       // 判断当前区块的hash是否正确
-      if (currentBlock.previousBlockHash !== this.hashBlock(previousBlock.blockHeader)) {
-        return false;
-      }
-      // 判断当前区块的工作量证明是否正确
-      if (!this.proofIsValid(currentBlock.blockHeader)) {
-        return false;
-      }
+      if (!this.isBlockValid(currentBlock, previousBlock)) return false;
       previousBlock = currentBlock;
       currentIndex += 1;
     }
     return true;
+  }
+
+  isBlockValid(block, previousBlock) {
+    if (!previousBlock) {
+      previousBlock = this.getLastBlock()
+    }
+    if (block.previousBlockHash !== this.hashBlock(previousBlock.blockHeader)) {
+      return false;
+    }
+    // 判断当前区块的工作量证明是否正确
+    if (!this.proofIsValid(block.blockHeader)) {
+      return false;
+    }
+    return true
   }
 
   /**

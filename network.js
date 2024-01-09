@@ -1,15 +1,21 @@
 /**
  * 网络相关, 监听网络上的节点，进行广播等
  */
-export default {
+import { EventEmitter } from "node:events"
 
-  subscribe: function () {
-    // 监听网络上的节点
-  },
-  on: function () {
-    // 监听网络上的节点
-  },
-  broadcast: function () {
-    
-  },
+export const emitter = new EventEmitter();
+
+export function subscribe(type, callback) {
+  emitter.on(type, callback);
+}
+
+export function broadcast(nodes, type, data) {
+  for (const node of nodes) {
+    got.post(`${node}/api`, {
+      json: {
+        type,
+        data
+      }
+    });
+  }
 }

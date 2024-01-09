@@ -218,6 +218,13 @@ class Blockchain {
    */
   getDifficult() {
     // 这里简化为固定的难度
+    return this.difficult
+    const old_difficulty = this.difficult;
+    const prev2016Block = this.chains[this.chains.length - 2016];
+    const actual_timespan =
+      this.getLastBlock().blockHeader.timestamp - prev2016Block.blockHeader.timestamp;
+    const new_difficulty = old_difficulty * (10 * 60 / actual_timespan) ** (1 / 4);
+    this.difficult = new_difficulty
     return this.difficult;
   }
 }

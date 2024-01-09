@@ -2,11 +2,6 @@ import crypto from "crypto";
 import got from "got";
 import sha256 from "crypto-js/sha256";
 
-
-/**
- * 区块维护相关功能
- */
-
 class Blockchain {
   constructor() {
     this.chains = [];
@@ -129,7 +124,7 @@ class Blockchain {
     while (currentIndex < chain.length) {
       const currentBlock = chain[currentIndex];
       // 判断当前区块的hash是否正确
-      if (currentBlock.previousBlockHash !== this.hashBlock(previousBlock)) {
+      if (currentBlock.previousBlockHash !== this.hashBlock(previousBlock.blockHeader)) {
         return false;
       }
       // 判断当前区块的工作量证明是否正确

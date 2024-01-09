@@ -5,7 +5,7 @@ import Koa from 'koa';
 import Router from 'koa-router';
 import bodyParser from 'koa-bodyparser';
 import { v4 as uuidv4 } from 'uuid';
-import Blockchain from './blockchain';
+import Blockchain from './v0.1/blockchain';
 
 const app = new Koa();
 const router = new Router();
@@ -43,18 +43,6 @@ router.get('/api/fullchains', async (ctx) => {
       fullchains: blockchain.chains
     }
   };
-});
-
-router.put('/api/users/:id', async (ctx) => {
-  // Logic to update a user
-  const updatedUser = await updateUser(ctx.params.id, ctx.request.body);
-  ctx.body = updatedUser;
-});
-
-router.delete('/api/users/:id', async (ctx) => {
-  // Logic to delete a user
-  await deleteUser(ctx.params.id);
-  ctx.body = 'User deleted successfully';
 });
 
 // Register routes
